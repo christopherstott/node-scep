@@ -70,7 +70,7 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
 
     BIO* csr_bio = BIO_new(BIO_s_mem());
     if(PKCS7_decrypt(p7enc, cakey, ca_cert, csr_bio, 0) == 0){
-	fprintf (stderr, "PKCS7_decrypt ERROR: %lu\n", ERR_get_error() );
+        fprintf (stderr, "PKCS7_decrypt ERROR: %lu\n", ERR_get_error() );
         BIO_free(in);
         PKCS7_free(p7sign);
         BIO_free(out_verify);
@@ -110,13 +110,13 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     BIO *crt_bio = BIO_new_mem_buf(crt_buf, crt_len);
     if (!crt_bio) {
         ERR_print_errors_fp(stderr);
-	return 0;
+        return 0;
     }
     X509 *x509in = d2i_X509_bio(crt_bio, NULL);
     if (!x509in) {
         ERR_print_errors_fp(stderr);
         BIO_free(crt_bio);
-	return 0;
+        return 0;
     }
 
     BIO *pkcs7_bio = BIO_new_mem_buf(p7_buf, p7_len);
@@ -124,7 +124,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
         ERR_print_errors_fp(stderr);
         BIO_free(crt_bio);
         X509_free(x509in);
-	return 0;
+        return 0;
     }
     PKCS7 *p7sign = d2i_PKCS7_bio(pkcs7_bio, NULL);
     if (!p7sign) {
@@ -132,7 +132,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
         BIO_free(crt_bio);
         X509_free(x509in);
         BIO_free(pkcs7_bio);
-	return 0;
+        return 0;
     }
 
 
@@ -312,7 +312,7 @@ int Verify_Response(unsigned char* p7_buf, size_t p7_len, unsigned char* crt_buf
         fprintf (stderr, "PKCS7_verify ERROR: %d\n", p7vercode);
         BIO_free(in);
         X509_free(x509in);
-	ERR_print_errors_fp(stderr);
+        ERR_print_errors_fp(stderr);
         BIO_free(p7_bio);
         PKCS7_free(p7sign);
         X509_STORE_free(store);

@@ -13,28 +13,29 @@ int (*extract_csr)(unsigned char* p7_buf, size_t p7_len, char *cert, char *key, 
 int (*encode_res)(unsigned char* cert_buf, size_t cert_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key, char **data, size_t &length );
 int (*verify)(unsigned char* p7_buf, size_t p7_len, unsigned char* crt_buf, size_t crt_len, unsigned char* in_buf, size_t in_len, char **data, size_t &length );
 
-Handle<Value> Extract_CSR(const Arguments& args) {
-    HandleScope scope;
+void Extract_CSR(const FunctionCallbackInfo<Value>& args) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
 
     if (args.Length() < 1) {
-        ThrowException(Exception::TypeError(String::New("Wrong number of arguments")));
-        return scope.Close(Undefined());
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
     }
 
     Local<Object> opt = args[0]->ToObject();
     if(!opt->IsObject()) {
-      ThrowException(Exception::TypeError(String::New("Args[0] must be a buffer")));
-      return scope.Close(Undefined());
+      isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Args[0] must be a buffer")));
+      return;
     }
 
-    Local<Value> req = opt->Get(v8::String::NewSymbol("req"));
+    Local<Value> req = opt->Get(v8::String::NewFromUtf8(isolate, "req", v8::String::kInternalizedString));
     if(!req->IsObject() || !node::Buffer::HasInstance(req)) {
-      ThrowException(Exception::TypeError(String::New("req must be a buffer")));
-      return scope.Close(Undefined());
+      isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "req must be a buffer")));
+      return;
     }
 
-    Local<Value> cert = opt->Get(v8::String::NewSymbol("cert"));
-    Local<Value> key = opt->Get(v8::String::NewSymbol("key"));
+    Local<Value> cert = opt->Get(v8::String::NewFromUtf8(isolate, "cert", v8::String::kInternalizedString));
+    Local<Value> key = opt->Get(v8::String::NewFromUtf8(isolate, "key", v8::String::kInternalizedString));
 
     unsigned char*msg = (unsigned char*) node::Buffer::Data(req);
     size_t msglen = node::Buffer::Length(req);
@@ -47,22 +48,24 @@ Handle<Value> Extract_CSR(const Arguments& args) {
 
     extract_csr(msg, msglen, *s4, *s5, &data, length);
 
-    return scope.Close(node::Buffer::New(data, length)->handle_);
+    args.GetReturnValue().Set(node::Buffer::New(data, length));
+    return;
 }
 
-Handle<Value> Encode_Res(const Arguments& args) {
-    HandleScope scope;
+void Encode_Res(const FunctionCallbackInfo<Value>& args) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
 
     if (args.Length() < 1) {
-        ThrowException(Exception::TypeError(String::New("Wrong number of arguments")));
-        return scope.Close(Undefined());
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
     }
 
     Local<Object> opt = args[0]->ToObject();
-    Local<Value> crt = opt->Get(v8::String::NewSymbol("crt"));
-    Local<Value> p7 = opt->Get(v8::String::NewSymbol("req"));
-    Local<Value> c = opt->Get(v8::String::NewSymbol("cert"));
-    Local<Value> k = opt->Get(v8::String::NewSymbol("key"));
+    Local<Value> crt = opt->Get(v8::String::NewFromUtf8(isolate, "crt", v8::String::kInternalizedString));
+    Local<Value> p7 = opt->Get(v8::String::NewFromUtf8(isolate, "req", v8::String::kInternalizedString));
+    Local<Value> c = opt->Get(v8::String::NewFromUtf8(isolate, "cert", v8::String::kInternalizedString));
+    Local<Value> k = opt->Get(v8::String::NewFromUtf8(isolate, "key", v8::String::kInternalizedString));
     v8::String::Utf8Value s1(c->ToString());
     v8::String::Utf8Value s2(k->ToString());
 
@@ -77,22 +80,23 @@ Handle<Value> Encode_Res(const Arguments& args) {
 
     encode_res(crt_buf, crt_len, p7_buf, p7_len, *s1, *s2, &data, length);
 
-    return scope.Close(node::Buffer::New(data, length)->handle_);
+    args.GetReturnValue().Set(node::Buffer::New(data, length));
 }
 
 
 
-Handle<Value> Verify_Response(const Arguments& args) {
-  HandleScope scope;
+void Verify_Response(const FunctionCallbackInfo<Value>& args) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
 
     if (args.Length() < 1) {
-        ThrowException(Exception::TypeError(String::New("Wrong number of arguments")));
-        return scope.Close(Undefined());
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
     }
     Local<Value> a = args[0];
     if(!a->IsObject() || !node::Buffer::HasInstance(a)) {
-      ThrowException(Exception::TypeError(String::New("Args[0] must be a buffer")));
-      return scope.Close(Undefined());
+      isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Args[0] must be a buffer")));
+      return;
     }
     Local<Object> pkcs7 = a->ToObject();
     unsigned char* p7_buf = (unsigned char*) node::Buffer::Data(pkcs7);
@@ -108,8 +112,8 @@ Handle<Value> Verify_Response(const Arguments& args) {
 
        Local<Value> b = args[1];
        if(!b->IsObject() || !node::Buffer::HasInstance(b)) {
-         ThrowException(Exception::TypeError(String::New("Args[1] must be a buffer")));
-         return scope.Close(Undefined());
+         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Args[1] must be a buffer")));
+         return;
        }
        Local<Object> input = b->ToObject();
        in_buf = (unsigned char*) node::Buffer::Data(input);
@@ -117,8 +121,8 @@ Handle<Value> Verify_Response(const Arguments& args) {
    
        Local<Value> c = args[2];
        if(!c->IsObject() || !node::Buffer::HasInstance(c)) {
-         ThrowException(Exception::TypeError(String::New("Args[2] must be a buffer")));
-         return scope.Close(Undefined());
+         isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Args[2] must be a buffer")));
+         return;
        }
        Local<Object> cert = c->ToObject();
        crt_buf = (unsigned char*) node::Buffer::Data(cert);
@@ -128,27 +132,27 @@ Handle<Value> Verify_Response(const Arguments& args) {
     char *data = NULL;
     size_t length = 0;
     
-    if(verify(p7_buf, p7_len, crt_buf, crt_len, in_buf, in_len, &data, length))
-       return scope.Close(node::Buffer::New(data, length)->handle_);
-    else
-       return scope.Close(Undefined());
+    if(verify(p7_buf, p7_len, crt_buf, crt_len, in_buf, in_len, &data, length)) {
+      args.GetReturnValue().Set(node::Buffer::New(data, length));
+    }
 }
 
 #ifndef RTLD_DEEPBIND
 #define RTLD_DEEPBIND   0 /* Mac no support  */
 #endif
 
-Handle<Value> DlOpen(const Arguments& args) {
-    HandleScope scope;
+void DlOpen(const FunctionCallbackInfo<Value>& args) {
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
 
     if (args.Length() < 1) {
-        ThrowException(Exception::TypeError(String::New("Wrong number of arguments")));
-        return scope.Close(Undefined());
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
     }
     Local<Value> a = args[0];
     if(!a->IsString()) {
-      ThrowException(Exception::TypeError(String::New("Args[0] must be a string")));
-      return scope.Close(Undefined());
+      isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "Args[0] must be a string")));
+      return;
     }
 
    v8::String::Utf8Value str(a->ToString());
@@ -172,15 +176,16 @@ Handle<Value> DlOpen(const Arguments& args) {
    verify = (int(*)(unsigned char* p7_buf, size_t p7_len, unsigned char* crt_buf, size_t crt_len, unsigned char* in_buf, size_t in_len, char **data, size_t &length)) dlsym(handle, n_v.c_str());
    extract_csr = (int(*)(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length)) dlsym(handle, n_ex.c_str());
    encode_res = (int(*)(unsigned char* cert_buf, size_t cert_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key, char **data, size_t &length )) dlsym(handle, n_en.c_str());
-
-   return scope.Close(Undefined());
 }
 
 void init(Handle<Object> exports) {
-   exports->Set(String::NewSymbol("dlopen"), FunctionTemplate::New(DlOpen)->GetFunction());
-   exports->Set(String::NewSymbol("extract_csr"), FunctionTemplate::New(Extract_CSR)->GetFunction());
-   exports->Set(String::NewSymbol("encode_res"), FunctionTemplate::New(Encode_Res)->GetFunction());
-   exports->Set(String::NewSymbol("verify_response"), FunctionTemplate::New(Verify_Response)->GetFunction());
+    Isolate* isolate = Isolate::GetCurrent();
+    HandleScope scope(isolate);
+
+    exports->Set(String::NewFromUtf8(isolate, "dlopen", v8::String::kInternalizedString), FunctionTemplate::New(isolate, DlOpen)->GetFunction());
+    exports->Set(String::NewFromUtf8(isolate, "extract_csr", v8::String::kInternalizedString), FunctionTemplate::New(isolate, Extract_CSR)->GetFunction());
+    exports->Set(String::NewFromUtf8(isolate, "encode_res", v8::String::kInternalizedString), FunctionTemplate::New(isolate, Encode_Res)->GetFunction());
+    exports->Set(String::NewFromUtf8(isolate, "verify_response", v8::String::kInternalizedString), FunctionTemplate::New(isolate, Verify_Response)->GetFunction());
 }
 
 NODE_MODULE(scep, init)
