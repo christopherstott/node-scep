@@ -9,10 +9,10 @@
 
 extern void init_lib(void) asm("_init_lib");
 extern int Verify_Response(unsigned char* p7_buf, size_t p7_len, unsigned char* crt_buf, size_t crt_len, unsigned char* in_buf, size_t in_len, char **data, size_t &length ) asm("_verify");
-extern int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length) asm("_extract_csr");
-extern int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length) asm("_encode_res");
+extern int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length, char* key_password) asm("_extract_csr");
+extern int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length, char* key_password) asm("_encode_res");
 
-int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length) {
+int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length, char* key_password) {
 
     BIO *in = BIO_new_mem_buf(p7_buf, p7_len);
     if (!in) {
@@ -54,7 +54,7 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
 
     EVP_PKEY *cakey = NULL;
     /* read the signer private key */
-    if (!(fp = fopen (key, "r")) || !(cakey = PEM_read_PrivateKey (fp, NULL, NULL, NULL))) {
+    if (!(fp = fopen (key, "r")) || !(cakey = PEM_read_PrivateKey (fp, NULL, NULL, key_password))) {
         fprintf (stderr, "Error reading signer private key in %s\n", key );
         BIO_free(in);
         PKCS7_free(p7sign);
@@ -105,7 +105,7 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
     return 1;
 }
 
-int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, size_t p7_len, char *cert_fn, char *key_fn,  char **data, size_t &length) {
+int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, size_t p7_len, char *cert_fn, char *key_fn,  char **data, size_t &length, char* key_password) {
 
     BIO *crt_bio = BIO_new_mem_buf(crt_buf, crt_len);
     if (!crt_bio) {
@@ -152,7 +152,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     fclose (fp);
 
     /* read the signer private key */
-    if (!(fp = fopen (key_fn, "r")) || !(pkey = PEM_read_PrivateKey (fp, NULL, NULL, NULL))) {
+    if (!(fp = fopen (key_fn, "r")) || !(pkey = PEM_read_PrivateKey (fp, NULL, NULL, key_password))) {
         fprintf (stderr, "Error reading signer private key in %s\n", key_fn );
         BIO_free(crt_bio);
         X509_free(x509in);

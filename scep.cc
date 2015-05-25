@@ -9,8 +9,8 @@
 
 using namespace v8;
 
-int (*extract_csr)(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length);
-int (*encode_res)(unsigned char* cert_buf, size_t cert_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key, char **data, size_t &length );
+int (*extract_csr)(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length, char* key_password);
+int (*encode_res)(unsigned char* cert_buf, size_t cert_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key, char **data, size_t &length, char* key_password);
 int (*verify)(unsigned char* p7_buf, size_t p7_len, unsigned char* crt_buf, size_t crt_len, unsigned char* in_buf, size_t in_len, char **data, size_t &length );
 
 void Extract_CSR(const FunctionCallbackInfo<Value>& args) {
@@ -36,17 +36,19 @@ void Extract_CSR(const FunctionCallbackInfo<Value>& args) {
 
     Local<Value> cert = opt->Get(v8::String::NewFromUtf8(isolate, "cert", v8::String::kInternalizedString));
     Local<Value> key = opt->Get(v8::String::NewFromUtf8(isolate, "key", v8::String::kInternalizedString));
+    Local<Value> password = opt->Get(v8::String::NewFromUtf8(isolate, "key_password", v8::String::kInternalizedString));
 
     unsigned char*msg = (unsigned char*) node::Buffer::Data(req);
     size_t msglen = node::Buffer::Length(req);
 
     v8::String::Utf8Value s4(cert->ToString());
     v8::String::Utf8Value s5(key->ToString());
+    v8::String::Utf8Value s6(password->ToString());
 
     char *data = NULL;
     size_t length = 0;
 
-    extract_csr(msg, msglen, *s4, *s5, &data, length);
+    extract_csr(msg, msglen, *s4, *s5, &data, length, *s6);
 
     args.GetReturnValue().Set(node::Buffer::New(data, length));
     return;
@@ -66,8 +68,10 @@ void Encode_Res(const FunctionCallbackInfo<Value>& args) {
     Local<Value> p7 = opt->Get(v8::String::NewFromUtf8(isolate, "req", v8::String::kInternalizedString));
     Local<Value> c = opt->Get(v8::String::NewFromUtf8(isolate, "cert", v8::String::kInternalizedString));
     Local<Value> k = opt->Get(v8::String::NewFromUtf8(isolate, "key", v8::String::kInternalizedString));
+    Local<Value> password = opt->Get(v8::String::NewFromUtf8(isolate, "key_password", v8::String::kInternalizedString));
     v8::String::Utf8Value s1(c->ToString());
     v8::String::Utf8Value s2(k->ToString());
+    v8::String::Utf8Value s3(password->ToString());
 
     unsigned char* crt_buf = (unsigned char*) node::Buffer::Data(crt);
     size_t crt_len = node::Buffer::Length(crt);
@@ -78,7 +82,7 @@ void Encode_Res(const FunctionCallbackInfo<Value>& args) {
     char *data = NULL;
     size_t length = 0;
 
-    encode_res(crt_buf, crt_len, p7_buf, p7_len, *s1, *s2, &data, length);
+    encode_res(crt_buf, crt_len, p7_buf, p7_len, *s1, *s2, &data, length, *s3);
 
     args.GetReturnValue().Set(node::Buffer::New(data, length));
 }
@@ -174,8 +178,8 @@ void DlOpen(const FunctionCallbackInfo<Value>& args) {
    init();
    
    verify = (int(*)(unsigned char* p7_buf, size_t p7_len, unsigned char* crt_buf, size_t crt_len, unsigned char* in_buf, size_t in_len, char **data, size_t &length)) dlsym(handle, n_v.c_str());
-   extract_csr = (int(*)(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length)) dlsym(handle, n_ex.c_str());
-   encode_res = (int(*)(unsigned char* cert_buf, size_t cert_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key, char **data, size_t &length )) dlsym(handle, n_en.c_str());
+   extract_csr = (int(*)(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length, char* key_password)) dlsym(handle, n_ex.c_str());
+   encode_res = (int(*)(unsigned char* cert_buf, size_t cert_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key, char **data, size_t &length, char* key_password )) dlsym(handle, n_en.c_str());
 }
 
 void init(Handle<Object> exports) {
