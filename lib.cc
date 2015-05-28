@@ -146,7 +146,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     X509 *x509in = d2i_X509_bio(crt_bio, NULL);
     if (!x509in) {
         ERR_print_errors_fp(stderr);
-        BIO_free(crt_bio)
+        BIO_free(crt_bio);
         return 0;
     }
 
