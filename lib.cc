@@ -13,21 +13,31 @@ extern int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *k
 extern int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length, char* key_password) asm("_encode_res");
 
 int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  char **data, size_t &length, char* key_password) {
+    printf("Extract_CSR\n");
+
+    printf("SSLEAY_VERSION = %s\n", SSLeay_version(SSLEAY_VERSION));
+    printf("SSLEAY_CFLAGS = %s\n", SSLeay_version(SSLEAY_CFLAGS));
+    printf("SSLEAY_BUILT_ON = %s\n", SSLeay_version(SSLEAY_BUILT_ON));
+    printf("SSLEAY_PLATFORM = %s\n", SSLeay_version(SSLEAY_PLATFORM));
+    printf("SSLEAY_DIR = %s\n", SSLeay_version(SSLEAY_DIR));
 
     BIO *in = BIO_new_mem_buf(p7_buf, p7_len);
     if (!in) {
         ERR_print_errors_fp(stderr);
         return 0;
     }
+    printf("d2i_PKCS7_bio\n");
     PKCS7 *p7sign = d2i_PKCS7_bio(in, NULL);
     if (!p7sign) {
         ERR_print_errors_fp(stderr);
         BIO_free(in);
+        printf("returning because no p7sign\n");
         return 0;
     }
     BIO* out_verify = BIO_new(BIO_s_mem());
     X509_STORE *store = X509_STORE_new();
 
+    printf("PKCS7_verify\n");
     int p7vercode = PKCS7_verify(p7sign, NULL, store, /*STACK_OF(X509) *certs,*/ NULL, out_verify, PKCS7_NOVERIFY | PKCS7_NOCHAIN | PKCS7_NOSIGS);
     if(p7vercode!=1){
         fprintf (stderr, "PKCS7_verify ERROR: %lu %d\n", ERR_get_error(), p7vercode );
@@ -35,12 +45,14 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
         PKCS7_free(p7sign);
         BIO_free(out_verify);
         X509_STORE_free(store);
+        printf("returning because no p7vercode\n");
         return 0;
     }
 
     FILE *fp;
     X509 *ca_cert = NULL;
     /* read the signer certificate */
+    printf("PEM_read_X509\n");
     if (!(fp = fopen (cert, "r")) || !(ca_cert = PEM_read_X509 (fp, NULL, NULL, NULL))) {
         fprintf (stderr, "Error reading signer certificate in %s\n", cert);
         BIO_free(in);
@@ -48,12 +60,14 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
         BIO_free(out_verify);
         X509_STORE_free(store);
         fclose (fp);
+        printf("returning because could not read signer cert\n");
         return 0;
     }
     fclose (fp);
 
     EVP_PKEY *cakey = NULL;
     /* read the signer private key */
+    printf("PEM_read_PrivateKey\n");
     if (!(fp = fopen (key, "r")) || !(cakey = PEM_read_PrivateKey (fp, NULL, NULL, key_password))) {
         fprintf (stderr, "Error reading signer private key in %s\n", key );
         BIO_free(in);
@@ -62,6 +76,7 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
         X509_STORE_free(store);
         fclose (fp);
         X509_free(ca_cert);
+        printf("returning because could not read private key\n");
         return 0;
     }
     fclose (fp);
@@ -69,6 +84,7 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
     PKCS7 *p7enc = d2i_PKCS7_bio(out_verify, NULL);
 
     BIO* csr_bio = BIO_new(BIO_s_mem());
+    printf("PKCS7_decrypt\n");
     if(PKCS7_decrypt(p7enc, cakey, ca_cert, csr_bio, 0) == 0){
         fprintf (stderr, "PKCS7_decrypt ERROR: %lu\n", ERR_get_error() );
         BIO_free(in);
@@ -79,6 +95,7 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
         EVP_PKEY_free(cakey);
         PKCS7_free(p7enc);
         BIO_free(csr_bio);
+        printf("returning because could not decrypt\n");
         return 0;
     }
 
@@ -102,16 +119,30 @@ int Extract_CSR(unsigned char* p7_buf, size_t p7_len, char *cert, char *key,  ch
     BIO_free(csr_bio);
     X509_REQ_free(csr);
 
+    printf("Done Extract_CSR\n");
+    printf("Extract_CSR data = %s\n", *data);
+    printf("Extract_CSR length = %d\n", length);
     return 1;
 }
 
 int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, size_t p7_len, char *cert_fn, char *key_fn,  char **data, size_t &length, char* key_password) {
+    printf("Encode_Res\n");
 
+    printf("SSLEAY_VERSION = %s\n", SSLeay_version(SSLEAY_VERSION));
+    printf("SSLEAY_CFLAGS = %s\n", SSLeay_version(SSLEAY_CFLAGS));
+    printf("SSLEAY_BUILT_ON = %s\n", SSLeay_version(SSLEAY_BUILT_ON));
+    printf("SSLEAY_PLATFORM = %s\n", SSLeay_version(SSLEAY_PLATFORM));
+    printf("SSLEAY_DIR = %s\n", SSLeay_version(SSLEAY_DIR));
+
+
+    printf("BIO_new_mem_buf\n");
     BIO *crt_bio = BIO_new_mem_buf(crt_buf, crt_len);
     if (!crt_bio) {
-        ERR_print_errors_fp(stderr);
+        ERR_print_errors_fp(stderr);    
         return 0;
     }
+
+    printf("d2i_X509_bio\n");
     X509 *x509in = d2i_X509_bio(crt_bio, NULL);
     if (!x509in) {
         ERR_print_errors_fp(stderr);
@@ -119,6 +150,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
         return 0;
     }
 
+    printf("BIO_new_mem_buf\n");
     BIO *pkcs7_bio = BIO_new_mem_buf(p7_buf, p7_len);
     if (!pkcs7_bio) {
         ERR_print_errors_fp(stderr);
@@ -126,6 +158,8 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
         X509_free(x509in);
         return 0;
     }
+
+    printf("d2i_PKCS7_bio\n");
     PKCS7 *p7sign = d2i_PKCS7_bio(pkcs7_bio, NULL);
     if (!p7sign) {
         ERR_print_errors_fp(stderr);
@@ -141,6 +175,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     STACK_OF (X509) * chain = sk_X509_new_null();
     FILE *fp;
     /* read the signer certificate */
+    printf("PEM_read_X509\n");
     if (!(fp = fopen (cert_fn, "r")) || !(cert = PEM_read_X509 (fp, NULL, NULL, NULL))) {
         fprintf (stderr, "Error reading signer certificate in %s\n", cert_fn);
         BIO_free(crt_bio);
@@ -152,6 +187,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     fclose (fp);
 
     /* read the signer private key */
+    printf("PEM_read_PrivateKey\n");
     if (!(fp = fopen (key_fn, "r")) || !(pkey = PEM_read_PrivateKey (fp, NULL, NULL, key_password))) {
         fprintf (stderr, "Error reading signer private key in %s\n", key_fn );
         BIO_free(crt_bio);
@@ -167,6 +203,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     PKCS7_set_type(degenerate_pkcs7, NID_pkcs7_signed);
     PKCS7_add_certificate(degenerate_pkcs7, x509in);
     BIO* degenerate_pkcs7_der = BIO_new(BIO_s_mem());
+    printf("i2d_PKCS7_bio\n");
     if(i2d_PKCS7_bio(degenerate_pkcs7_der, degenerate_pkcs7)<=0)
     {
         fprintf (stderr, "ERROR: i2d_PKCS7_bio\n" );
@@ -181,6 +218,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     }
 
     STACK_OF(X509) *sk = PKCS7_get0_signers(p7sign, NULL, 0);
+    printf("PKCS7_encrypt\n");
     PKCS7 *enc_cert = PKCS7_encrypt(sk, degenerate_pkcs7_der, EVP_des_ede3_cbc(), PKCS7_BINARY);
     if(!enc_cert){
         fprintf (stderr, "ERROR: PKCS7_encrypt\n" );
@@ -193,6 +231,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
         BIO_free(degenerate_pkcs7_der);
         return 0;
     }
+    printf("i2d_PKCS7_bio\n");
     BIO* enc_cert_der = BIO_new(BIO_s_mem());
     if(i2d_PKCS7_bio(enc_cert_der, enc_cert)<=0)
     {
@@ -209,6 +248,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
         return 0;
     }
 
+    printf("PKCS7_sign\n");
     PKCS7 *reply = PKCS7_sign (cert, pkey, chain, enc_cert_der, PKCS7_BINARY);
     if (!reply) {
         fprintf (stderr, "ERROR: PKCS7_sign\n" );
@@ -225,6 +265,7 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     }
 
     BIO* out = BIO_new(BIO_s_mem());
+    printf("i2d_PKCS7_bio\n");
     if(i2d_PKCS7_bio(out, reply)<=0)
     {
         fprintf (stderr, "ERROR: i2d_PKCS7_bio %lu\n", ERR_get_error() );
@@ -256,6 +297,9 @@ int Encode_Res(unsigned char* crt_buf, size_t crt_len, unsigned char* p7_buf, si
     PKCS7_free(enc_cert);
     BIO_free(enc_cert_der);
 
+    printf("Encode_Res done\n");
+    printf("Encode_Res data = %s\n", *data);
+    printf("Encode_Res length = %d\n", length);
     return 1;
 }
 
