@@ -8,9 +8,11 @@
       ],
      'link_settings': {
           'libraries': [
-		'-lcrypto'
+		        '-L../openssl0.9.8/lib',
+            'libcrypto-<!(uname).a'
           ],
             'include_dirs': [
+              '../openssl0.9.8/include'
               '/usr/include',
             ],
       }
