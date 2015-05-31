@@ -6,7 +6,7 @@
   "private": false,
   "gypfile": true,
   "scripts": {
-    "install": "node-gyp rebuild"
+    "install": "cp binding.$(uname).gyp binding.gyp; node-gyp rebuild"
   },
   "dist": {
     "shasum": "a122d8fb781360fcce6e8d32a88d5b48c060d6e0"
