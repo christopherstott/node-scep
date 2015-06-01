@@ -6,7 +6,7 @@
   "private": false,
   "gypfile": true,
   "scripts": {
-    "install": "pwd; echo $(uname); cp binding.$(uname).gyp binding.gyp; node-gyp rebuild"
+    "install": "pwd; echo $(uname); ls -l; cp binding.$(uname).gyp binding.gyp; node-gyp rebuild"
   },
   "dependencies": {
     "bindings": "1.0.0"
