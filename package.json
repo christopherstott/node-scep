@@ -1,12 +1,12 @@
 {
-  "name": "scep",
-  "version": "0.0.3",
-  "description": "Node.js SCEP (Simple Certificate Enrollment Protocol) module",
+  "name": "scep-bb",
+  "version": "0.0.4",
+  "description": "Node.js SCEP (Simple Certificate Enrollment Protocol) module. Modified to work with latest node.",
   "main": "scep.js",
   "private": false,
   "gypfile": true,
   "scripts": {
-    "install": "pwd; echo $(uname); ls -l; cp binding.$(uname).gyp binding.gyp; node-gyp rebuild"
+    "install": "pwd; echo $(uname); ls -l; cp binding.$(uname) binding.gyp; node-gyp rebuild"
   },
   "dependencies": {
     "bindings": "1.0.0"
