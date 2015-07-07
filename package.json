@@ -1,5 +1,5 @@
 {
-  "name": "scep-bb",
+  "name": "scep-bb2",
   "version": "0.0.4",
   "description": "Node.js SCEP (Simple Certificate Enrollment Protocol) module. Modified to work with latest node.",
   "main": "scep.js",
