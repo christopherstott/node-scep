@@ -50,7 +50,7 @@ void Extract_CSR(const FunctionCallbackInfo<Value>& args) {
 
     extract_csr(msg, msglen, *s4, *s5, &data, length, *s6);
 
-    args.GetReturnValue().Set(node::Buffer::New(data, length));
+    args.GetReturnValue().Set(node::Buffer::New(isolate, data, length).ToLocalChecked());
     return;
 }
 
@@ -84,7 +84,7 @@ void Encode_Res(const FunctionCallbackInfo<Value>& args) {
 
     encode_res(crt_buf, crt_len, p7_buf, p7_len, *s1, *s2, &data, length, *s3);
 
-    args.GetReturnValue().Set(node::Buffer::New(data, length));
+    args.GetReturnValue().Set(node::Buffer::New(isolate, data, length).ToLocalChecked());
 }
 
 
@@ -137,7 +137,7 @@ void Verify_Response(const FunctionCallbackInfo<Value>& args) {
     size_t length = 0;
     
     if(verify(p7_buf, p7_len, crt_buf, crt_len, in_buf, in_len, &data, length)) {
-      args.GetReturnValue().Set(node::Buffer::New(data, length));
+      args.GetReturnValue().Set(node::Buffer::New(isolate, data, length).ToLocalChecked());
     }
 }
 
